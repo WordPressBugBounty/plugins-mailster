@@ -1,0 +1,38 @@
+{
+	"name": "mailster",
+	"version": "2.0.3",
+	"description": "Compatibility tester plugin for the Mailster Newsletter plugin on WordPress.org.",
+	"author": "everpress",
+	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"mailster",
+		"newsletter",
+		"email",
+		"compatibility",
+		"tester"
+	],
+	"homepage": "https://mailster.co",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/everpress-co/mailster-wprepo.git"
+	},
+	"bugs": {
+		"url": "https://github.com/everpress-co/mailster-wprepo/issues"
+	},
+	"files": [
+		"*.php",
+		"classes",
+		"assets",
+		"views",
+		"readme.txt"
+	],
+	"devDependencies": {
+		"@wordpress/scripts": "^36.1.0"
+	},
+	"scripts": {
+		"lint": "npm run lint:pkg-json",
+		"lint:pkg-json": "wp-scripts lint-pkg-json",
+		"packages-update": "wp-scripts packages-update",
+		"plugin-zip": "wp-scripts plugin-zip"
+	}
+}

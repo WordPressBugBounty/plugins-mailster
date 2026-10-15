@@ -1,3 +1,8 @@
+/**
+ * Admin UI for running Mailster compatibility tests and Freemius checkout.
+ *
+ * @since 2.0.0
+ */
 jQuery(document).ready(function ($) {
 	'use strict';
 
@@ -82,7 +87,14 @@ jQuery(document).ready(function ($) {
 		}, 300);
 	});
 
-	//call action method
+	/**
+	 * Requests the next compatibility test over admin-ajax.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param {string} [test_id] Optional. Test identifier to run.
+	 * @return {void}
+	 */
 	function test(test_id) {
 		$('#mailster_start_test').prop('disabled', true);
 
@@ -161,6 +173,14 @@ jQuery(document).ready(function ($) {
 		dialog.close();
 	});
 
+	/**
+	 * Loads the Freemius checkout script once, then runs a callback.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param {Function} [cb] Optional. Callback invoked when checkout is ready.
+	 * @return {void}
+	 */
 	function requiredCheckout(cb) {
 		if (checkoutLoaded) {
 			cb && cb();
@@ -175,6 +195,15 @@ jQuery(document).ready(function ($) {
 		);
 	}
 
+	/**
+	 * Formats a string by replacing sequential %s / %d placeholders.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param {string} str Format string.
+	 * @param {...*} args Replacement values.
+	 * @return {string} Formatted string.
+	 */
 	function sprintf() {
 		var a = Array.prototype.slice.call(arguments),
 			str = a.shift(),

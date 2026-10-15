@@ -1,10 +1,40 @@
 <?php
+/**
+ * Tester class file.
+ *
+ * @package mailster
+ */
 
+/**
+ * Boots the Mailster compatibility tester admin UI and AJAX runners.
+ *
+ * @since 1.0
+ */
 class MailsterTester {
 
+	/**
+	 * Absolute filesystem path to the plugin directory.
+	 *
+	 * @since 1.0
+	 *
+	 * @var string
+	 */
 	private $plugin_path;
+
+	/**
+	 * Public URL to the plugin directory.
+	 *
+	 * @since 1.0
+	 *
+	 * @var string
+	 */
 	private $plugin_url;
 
+	/**
+	 * Registers hooks and loads the plugin text domain.
+	 *
+	 * @since 1.0
+	 */
 	public function __construct() {
 
 		$this->plugin_path = plugin_dir_path( MAILSTER_TESTER_FILE );
@@ -14,14 +44,21 @@ class MailsterTester {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ) );
 		add_action( 'wp_ajax_mailster_test', array( $this, 'ajax' ) );
 		add_filter( 'upgrader_package_options', array( &$this, 'upgrader_package_options' ) );
-		//add_action( 'activated_plugin', array( $this, 'on_activate' ) );
+		add_action( 'activated_plugin', array( $this, 'on_activate' ) );
 	}
 
 
+	/**
+	 * Runs a single compatibility test via admin-ajax and returns JSON.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
 	public function ajax() {
 
-		// verify nonce
-		if ( ! wp_verify_nonce( $_POST['_nonce'], 'mailster_tester' ) ) {
+		// Verify nonce.
+		if ( ! isset( $_POST['_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_nonce'] ) ), 'mailster_tester' ) ) {
 			wp_send_json_error( array( 'message' => 'Nonce failed!' ) );
 		}
 
@@ -29,7 +66,7 @@ class MailsterTester {
 
 		$test = new MailsterTests();
 
-		$test_id = isset( $_POST['test_id'] ) ? $_POST['test_id'] : null;
+		$test_id = isset( $_POST['test_id'] ) ? sanitize_text_field( wp_unslash( $_POST['test_id'] ) ) : null;
 
 		$success            = $test->run( $test_id );
 		$return['message']  = $test->get_message();
@@ -47,6 +84,14 @@ class MailsterTester {
 	}
 
 
+	/**
+	 * Runs a named test or returns the tests runner instance.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @param string|null $test Optional. Test identifier to run. Default null returns the runner.
+	 * @return MailsterTests|array Runner instance when `$test` is null; otherwise the last message payload.
+	 */
 	public function test( $test = null ) {
 
 		require_once $this->plugin_path . '/classes/tests.class.php';
@@ -60,10 +105,17 @@ class MailsterTester {
 	}
 
 
+	/**
+	 * Enqueues tester assets and localizes Freemius checkout arguments.
+	 *
+	 * @since 2.0.0
+	 *
+	 * @return void
+	 */
 	public function admin_enqueue_scripts() {
 
-		wp_enqueue_style( 'mailster-tester', $this->plugin_url . '/assets/style.css', array() );
-		wp_enqueue_script( 'mailster-tester', $this->plugin_url . '/assets/script.js', array( 'jquery' ), false, true );
+		wp_enqueue_style( 'mailster-tester', $this->plugin_url . '/assets/style.css', array(), MAILSTER_TESTER_VERSION );
+		wp_enqueue_script( 'mailster-tester', $this->plugin_url . '/assets/script.js', array( 'jquery' ), MAILSTER_TESTER_VERSION, true );
 
 		$user = wp_get_current_user();
 
@@ -93,6 +145,13 @@ class MailsterTester {
 	}
 
 
+	/**
+	 * Registers the Mailster Tester top-level admin menu page.
+	 *
+	 * @since 1.0
+	 *
+	 * @return void
+	 */
 	public function admin_menu() {
 
 		$page = add_menu_page( __( 'Mailster Tester', 'mailster' ), __( 'Mailster Tester', 'mailster' ), 'read', 'mailster-tester', array( $this, 'admin_page' ), 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2OTIuOCA2MTEuOSIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZD0iTTQ3MS4xIDI0LjMgMzQ2LjQgMTc2LjcgMjIxLjcgMjQuM0gwdjU2OC4xaDE5NFYyNzMuN2wxNTIuNCAyMDcuOCAxNTIuNC0yMDcuOHYzMTguNmgxOTR2LTU2OEg0NzEuMXoiIGZpbGw9IiMyYmIyZTgiLz48L3N2Zz4=', 25 );
@@ -101,15 +160,30 @@ class MailsterTester {
 	}
 
 
+	/**
+	 * Renders the Mailster Tester admin screen.
+	 *
+	 * @since 1.0
+	 *
+	 * @return void
+	 */
 	public function admin_page() {
 
 		include $this->plugin_path . '/views/testpage.php';
 	}
 
 
+	/**
+	 * Adjusts package upgrade options when installing a local Mailster zip.
+	 *
+	 * @since 2.0.2
+	 *
+	 * @param array $options Upgrader package options.
+	 * @return array Filtered upgrader package options.
+	 */
 	public function upgrader_package_options( $options ) {
 
-		// check if we are installing Mailster and skip abortion if the destination exists. Check if package is a URL which indicates it's loaded from the repository
+		// Check if we are installing Mailster and skip abortion if the destination exists. Check if package is a URL which indicates it's loaded from the repository.
 		if ( isset( $options['package'] ) && preg_match( '/^mailster/', basename( $options['package'] ) ) && ! filter_var( $options['package'], FILTER_VALIDATE_URL ) ) {
 			$options['clear_destination']           = true;
 			$options['abort_if_destination_exists'] = false;
@@ -119,31 +193,38 @@ class MailsterTester {
 		return $options;
 	}
 
+	/**
+	 * Deactivates this tester plugin after a local Mailster package install.
+	 *
+	 * @since 2.0.2
+	 *
+	 * @param bool|WP_Error $res Installation result from the upgrader.
+	 * @return bool|WP_Error Unchanged installation result.
+	 */
 	public function upgrader_post_install( $res ) {
 
-		$plugin_file = plugin_basename( MAILSTER_TESTER_FILE );
-
-		$activate_url = admin_url(
-			'plugins.php?action=activate' .
-			'&amp;plugin=' . urlencode( $plugin_file )
-		);
-
-		$url = wp_nonce_url( $activate_url, 'activate-plugin_' . $plugin_file );
-
-		echo '<p>' . __( 'Deactivating Mailster Tester Plugin...', 'mailster' ) . '</p>';
+		echo '<p>' . esc_html__( 'Deactivating Mailster Tester Plugin...', 'mailster' ) . '</p>';
 		deactivate_plugins( MAILSTER_TESTER_FILE );
-		echo '<p>' . __( 'Installing Mailster...', 'mailster' ) . '</p>';
+		echo '<p>' . esc_html__( 'Installing Mailster...', 'mailster' ) . '</p>';
 
 		return $res;
 	}
 
+	/**
+	 * Redirects to the tester screen when this plugin is activated.
+	 *
+	 * @since 2.0.2
+	 *
+	 * @param string $plugin Plugin basename that was activated.
+	 * @return void
+	 */
 	public function on_activate( $plugin ) {
 
-		if ( $plugin !== plugin_basename( MAILSTER_TESTER_FILE ) ) {
+		if ( plugin_basename( MAILSTER_TESTER_FILE ) !== $plugin ) {
 			return;
 		}
 
-		wp_redirect( admin_url( 'admin.php?page=mailster-tester' ) );
+		wp_safe_redirect( admin_url( 'admin.php?page=mailster-tester' ) );
 		exit();
 	}
 }
